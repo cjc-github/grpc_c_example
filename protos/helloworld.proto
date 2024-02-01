@@ -25,8 +25,14 @@ package helloworld;
 service Greeter {
   // Sends a greeting
   rpc SayHello (HelloRequest) returns (HelloReply) {}
-  rpc SayHelloAgain (HelloRequest) returns (HelloReply) {}
+
   rpc SayHelloStreamReply (HelloRequest) returns (stream HelloReply) {}
+
+  rpc SayHelloBidiStream (stream HelloRequest) returns (stream HelloReply) {}
+  
+  
+  rpc NewSayHello (NewRepeat) returns (NewReply) {}
+  
     // 注册请求
   rpc Register (RegisterRequest) returns (RegisterResponse);
   // 注销请求
@@ -42,6 +48,22 @@ service Greeter {
   // 拉取全局覆盖率
   rpc GetCoverage (GetCoverageRequest) returns (GetCoverageResponse);
 }
+
+message MapData{
+ uint64 index = 1;
+ uint64 count = 2;
+}
+
+message NewRepeat{
+ repeated string field = 1;
+ repeated MapData md =2;
+}
+
+message NewReply{
+ repeated string field = 1;
+ repeated MapData md =2;
+}
+
 
 // The request message containing the user's name.
 message HelloRequest {
