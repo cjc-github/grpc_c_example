@@ -11,9 +11,9 @@
 #include <grpcpp/health_check_service_interface.h>
 
 #ifdef BAZEL_BUILD
-#include "examples/protos/helloworld_repeated.grpc.pb.h"
+#include "examples/protos/helloworld_bytes.grpc.pb.h"
 #else
-#include "helloworld_repeated.grpc.pb.h"
+#include "helloworld_bytes.grpc.pb.h"
 #endif
 
 using grpc::Server;
@@ -24,7 +24,6 @@ using helloworld::Greeter;
 // 接口
 using helloworld::NewRepeat;
 using helloworld::NewReply;
-using helloworld::MapData;
 
 ABSL_FLAG(uint16_t, port, 50051, "Server port for the service");
 
@@ -33,24 +32,13 @@ class GreeterServiceImpl final : public Greeter::Service {
   Status NewSayHello(ServerContext* context, const NewRepeat* request,
                   NewReply* reply) override {
 
-   // 基础类型的repeated
-    std::string user = request->field(0);
-    std::cout << "来自客户端的数据: " << user << std::endl;
+    // char *coverage_data;
+    // strcpy(coverage_data, request->coverage_data().c_str());
 
-    const MapData& md1 = request->md(0);
-    std::cout << "来自客户端的数据: " << md1.index() << std::endl;
-    std::cout << "来自客户端的数据: " << md1.count() << std::endl;
+    const std::string& coverage_data = request->coverage_data();
+    std::cout << "来自客户端的数据: " << coverage_data << std::endl; 
 
-
-    // 返回信息
-    std::vector<std::string> messages = {"Hello", "World"};
-    for (const auto& message : messages) {
-        reply->add_field(message);
-    }
-
-    MapData* md2 = reply->add_md();
-    md2->set_index(md1.index() + 1);
-    md2->set_count(md1.count() + 1);
+    reply->set_coverage_data(coverage_data);
 
     return Status::OK;
   }

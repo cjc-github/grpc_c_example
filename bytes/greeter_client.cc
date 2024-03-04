@@ -8,9 +8,9 @@
 #include <grpcpp/grpcpp.h>
 
 #ifdef BAZEL_BUILD
-#include "examples/protos/helloworld_repeated.grpc.pb.h"
+#include "examples/protos/helloworld_bytes.grpc.pb.h"
 #else
-#include "helloworld_repeated.grpc.pb.h"
+#include "helloworld_bytes.grpc.pb.h"
 #endif
 
 ABSL_FLAG(std::string, target, "localhost:50051", "Server address");
@@ -22,26 +22,37 @@ using helloworld::Greeter;
 // 接口
 using helloworld::NewRepeat;
 using helloworld::NewReply;
-using helloworld::MapData;
 
 class GreeterClient {
  public:
   GreeterClient(std::shared_ptr<Channel> channel)
       : stub_(Greeter::NewStub(channel)) {}
 
-   std::string NewSayHello(const std::string& user) {
+    std::string NewSayHello(const std::string& user) {
 
     NewRepeat request;
-    // 基础类型的repeated
-    request.add_field(user);
-    std::cout << "发送的数据: " << user << std::endl;
 
-    // 结构体的repeated
-    MapData *md1 = request.add_md();
-    md1->set_index(3);
-    md1->set_count(4);
+    std::cout << "客户端发送的数据: Hello world" << std::endl;
+    // // 1、字符串 -> bytes
+    // std::string data = "hello world";
+    // request.set_coverage_data(data);
+
+    // // 2、u8* -> bytes
+    // const uint8_t* data_ptr = reinterpret_cast<const uint8_t*>("Hello, World!");
+    // size_t data_len = 13;
+
+    // std::string data(reinterpret_cast<const char*>(data_ptr), data_len);
+    // request.set_coverage_data(data);
 
 
+    // 3、
+    uint8_t array[] = {0xE4, 0xBD, 0xA0, 0xE5, 0xA5, 0xBD, 0xE5, 0xA5, 0xBD, 0x00};
+    size_t len = sizeof(array) / sizeof(array[0]) - 1;
+    std::string str(reinterpret_cast<const char*>(array), len);
+    request.set_coverage_data(str);
+
+    // 可行
+    // request.set_coverage_data("Hello world");
 
     NewReply reply;
     ClientContext context;
@@ -49,15 +60,7 @@ class GreeterClient {
 
 
     if (status.ok()) {
-      for (int i = 0; i < reply.field_size(); ++i) {
-        std::string user = reply.field(i);
-        std::cout << "服务端返回的数据: " << user << std::endl;
-      }
-
-      for (int i = 0; i < reply.md_size(); ++i) {
-        MapData md = reply.md(i);
-        std::cout << "服务端返回的数据: " << md.index() << md.count() << std::endl;
-      }
+      std::cout << "服务端返回的数据: " << reply.coverage_data() << std::endl;
       return "true";
     } else {
       std::cout << status.error_code() << ": " << status.error_message()
