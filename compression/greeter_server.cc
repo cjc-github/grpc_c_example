@@ -36,14 +36,30 @@ using helloworld::Greeter;
 using helloworld::HelloReply;
 using helloworld::HelloRequest;
 
-// Logic and data behind the server's behavior.
+
+// typedef enum {
+//   GRPC_COMPRESS_NONE = 0,
+//   GRPC_COMPRESS_DEFLATE = 1,
+//   GRPC_COMPRESS_GZIP = 2,
+//   /* EXPERIMENTAL: Stream compression is currently experimental. */
+//   GRPC_COMPRESS_STREAM_GZIP = 3,
+//   /* TODO(ctiller): snappy */
+//   GRPC_COMPRESS_ALGORITHMS_COUNT = 4
+// } grpc_compression_algorithm;
+
 class GreeterServiceImpl final : public Greeter::Service {
   Status SayHello(ServerContext* context, const HelloRequest* request,
                   HelloReply* reply) override {
-    // Overwrite the call's compression algorithm to DEFLATE.
-    context->set_compression_algorithm(GRPC_COMPRESS_DEFLATE);
+    // 设置压缩级别
+    context->set_compression_algorithm(GRPC_COMPRESS_GZIP);
+    // 打印出压缩算法
+    std::cout << " [+] compression algorithm: " << context->compression_algorithm() << std::endl;
+
+    // 设置返回信息
     std::string prefix("Hello ");
     reply->set_message(prefix + request->name());
+
+    // 打印结果
     std::cout << " [+] Server return: " << prefix << request->name() << std::endl;
     return Status::OK;
   }
@@ -54,19 +70,13 @@ void RunServer() {
   GreeterServiceImpl service;
 
   ServerBuilder builder;
-  // Set the default compression algorithm for the server.
-  builder.SetDefaultCompressionAlgorithm(GRPC_COMPRESS_GZIP);
-  // Listen on the given address without any authentication mechanism.
+  // channel级别的压缩算法，但是会被调用时的压缩算法给覆盖掉
+  builder.SetDefaultCompressionAlgorithm(GRPC_COMPRESS_DEFLATE);
   builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
-  // Register "service" as the instance through which we'll communicate with
-  // clients. In this case it corresponds to an *synchronous* service.
   builder.RegisterService(&service);
-  // Finally assemble the server.
+
   std::unique_ptr<Server> server(builder.BuildAndStart());
   std::cout << "Server listening on " << server_address << std::endl;
-
-  // Wait for the server to shutdown. Note that some other thread must be
-  // responsible for shutting down the server for this call to ever return.
   server->Wait();
 }
 

@@ -41,32 +41,25 @@ class GreeterClient {
   GreeterClient(std::shared_ptr<Channel> channel)
       : stub_(Greeter::NewStub(channel)) {}
 
-  // Assembles the client's payload, sends it and presents the response back
-  // from the server.
+
   std::string SayHello(const std::string& user) {
-    // Data we are sending to the server.
     HelloRequest request;
     request.set_name(user);
     std::cout << " [+] Client send: " << user << std::endl;
-
-    // Container for the data we expect from the server.
     HelloReply reply;
-
-    // Context for the client. It could be used to convey extra information to
-    // the server and/or tweak certain RPC behaviors.
     ClientContext context;
 
-    // Overwrite the call's compression algorithm to DEFLATE.
+    // 设置压缩算法
     context.set_compression_algorithm(GRPC_COMPRESS_DEFLATE);
 
-    // Return the compression algorithm the server call will request be used.
+    // 打印出压缩算法
     std::cout << " [+] compression algorithm: " << context.compression_algorithm() << std::endl;
 
 
-    // The actual RPC.
+    // 调用SayHello
     Status status = stub_->SayHello(&context, request, &reply);
 
-    // Act upon its status.
+    // 返回
     if (status.ok()) {
       return reply.message();
     } else {
@@ -81,18 +74,16 @@ class GreeterClient {
 };
 
 int main(int argc, char** argv) {
-  // Instantiate the client. It requires a channel, out of which the actual RPCs
-  // are created. This channel models a connection to an endpoint (in this case,
-  // localhost at port 50051). We indicate that the channel isn't authenticated
-  // (use of InsecureChannelCredentials()).
   ChannelArguments args;
-  // Set the default compression algorithm for the channel.
+
+  // channel级别的压缩算法，但是会被调用时的压缩算法给覆盖掉
   args.SetCompressionAlgorithm(GRPC_COMPRESS_GZIP);
   GreeterClient greeter(grpc::CreateCustomChannel(
       "localhost:50051", grpc::InsecureChannelCredentials(), args));
+
+  // 调用SayHello函数
   std::string user("world world world world");
   std::string reply = greeter.SayHello(user);
-  std::cout << "Greeter received: " << reply << std::endl;
-
+  std::cout << " [+] Greeter received: " << reply << std::endl;
   return 0;
 }

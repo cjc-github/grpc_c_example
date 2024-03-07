@@ -31,7 +31,6 @@ ABSL_FLAG(uint16_t, port, 50051, "Server port for the service");
 class GreeterServiceImpl final : public Greeter::Service {
   Status NewSayHello(ServerContext* context, const NewRepeat* request,
                   NewReply* reply) override {
-    // context->set_compression_algorithm(GRPC_COMPRESS_GZIP);
     const std::string& coverage_data = request->coverage_data();
     // std::cout << "来自客户端的数据: " << coverage_data << std::endl; 
 
@@ -52,9 +51,6 @@ void RunServer(uint16_t port) {
   grpc::reflection::InitProtoReflectionServerBuilderPlugin();
   ServerBuilder builder;
 
-  builder.SetMaxReceiveMessageSize(8 * 1024 * 1024);
-  builder.SetMaxSendMessageSize(8 * 1024 * 1024);
-  builder.SetMaxMessageSize(8 * 1024 * 1024);
   builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
 
   builder.RegisterService(&service);
