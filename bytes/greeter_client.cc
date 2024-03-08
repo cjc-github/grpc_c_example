@@ -33,6 +33,10 @@ class GreeterClient {
     NewRepeat request;
 
     std::cout << "客户端发送的数据: Hello world" << std::endl;
+
+    // // 0、 可行
+    // request.set_coverage_data("Hello world");
+
     // // 1、字符串 -> bytes
     // std::string data = "hello world";
     // request.set_coverage_data(data);
@@ -50,15 +54,10 @@ class GreeterClient {
     // size_t len = sizeof(array) / sizeof(array[0]) - 1;
 
     // // 4、试探超时
-    // const int arraySize = 8388608;
-    // 4194299是数据单次传递的最大值了，因为考虑裁剪
-    const int arraySize = 4194299;
-    // const int arraySize = 65536;
+    const int arraySize = 8 * 1024 * 1024;
+    uint8_t* array = new uint8_t[arraySize];
 
-    uint8_t array[arraySize];
-
-    uint8_t value = 0xE4;
-
+    uint8_t value = 0x04;
     for(int i = 0; i < arraySize; i++){
       array[i] = value;
     }
@@ -66,16 +65,14 @@ class GreeterClient {
     std::string str(reinterpret_cast<const char*>(array), arraySize);
     request.set_coverage_data(str);
 
-    // 5、 可行
-    // request.set_coverage_data("Hello world");
-
     NewReply reply;
     ClientContext context;
-    // context.set_compression_algorithm(GRPC_COMPRESS_DEFLATE);
     Status status = stub_->NewSayHello(&context, request, &reply);
 
+    delete[] array;
+
     if (status.ok()) {
-      // std::cout << "服务端返回的数据: " << reply.coverage_data() << std::endl;
+      std::cout << "服务端返回的数据: " << reply.coverage_data().length() << std::endl;
       return "true";
     } else {
       std::cout << status.error_code() << ": " << status.error_message()
@@ -92,16 +89,14 @@ int main(int argc, char** argv) {
   absl::ParseCommandLine(argc, argv);
   std::string target_str = absl::GetFlag(FLAGS_target);
 
+  // 设置10M的传输大小
   grpc::ChannelArguments ch_args;
-  // ch_args.SetMaxReceiveMessageSize(8 * 1024 * 1024);
-  // ch_args.SetMaxSendMessageSize(8 * 1024 * 1024);
-  // ch_args.SetInt(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH, 100*1024*1024);
+  ch_args.SetMaxReceiveMessageSize(10 * 1024 * 1024);
+  ch_args.SetMaxSendMessageSize(10 * 1024 * 1024);
   ch_args.SetInt(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH, -1);
+  
   GreeterClient greeter(
       grpc::CreateCustomChannel(target_str, grpc::InsecureChannelCredentials(), ch_args));
-
-  // GreeterClient greeter(
-  //    grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
 
   std::string user("world");
   std::string reply = greeter.NewSayHello(user);

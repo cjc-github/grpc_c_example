@@ -52,11 +52,11 @@ void RunServer(uint16_t port) {
   grpc::reflection::InitProtoReflectionServerBuilderPlugin();
   ServerBuilder builder;
 
-  builder.SetMaxReceiveMessageSize(8 * 1024 * 1024);
-  builder.SetMaxSendMessageSize(8 * 1024 * 1024);
-  builder.SetMaxMessageSize(8 * 1024 * 1024);
+  // 服务端设置大小
+  builder.SetMaxReceiveMessageSize(10 * 1024 * 1024);
+  builder.SetMaxSendMessageSize(10 * 1024 * 1024);
+  builder.SetMaxMessageSize(10 * 1024 * 1024);
   builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
-
   builder.RegisterService(&service);
 
   std::unique_ptr<Server> server(builder.BuildAndStart());
